@@ -1,0 +1,164 @@
+---
+title: "Class 10: Structural Bioinformatics (pt. 1)"
+author: "Nicole Alfonso, (PID: A16429176)"
+format: pdf
+editor: visual
+---
+
+## The PDB Database
+
+We are examining the size and composition of the main databse of biomolecular structures - PDB. \
+
+```{r}
+pdbstats <- read.csv('~/BIMM143/class10/Data Export Summary.csv', row.names = 1)
+head(pdbstats)
+```
+
+> **Q1.** What percentage of structures in the PDB are solved by X-Ray and Electron Microscopy.
+>
+> 93.26839 -\> 93.27%
+
+How to solve the problem by extracting the data from the data set:
+
+```{r}
+# My function for removing commas from a character vector, then modifying the character vector to an interger vector
+character_to_interger <- function(dataset_column) {
+  remove_commas <- gsub(",", "", dataset_column)
+  interger_data <- as.integer(remove_commas)
+  interger_data
+}
+```
+
+```{r}
+# Isolating the xray column 
+xray <- pdbstats$X.ray
+# Using character_to_interger function 
+xray_int <- character_to_interger(xray)
+xray_sum <- sum(xray_int)
+xray_sum
+```
+
+```{r}
+electron_microscopy <- pdbstats$EM
+em_int <- character_to_interger(electron_microscopy)
+em_sum <- sum(em_int)
+em_sum
+```
+
+```{r}
+# Combining the xray and electron microscopy methods into one vector 
+xray_em <- xray_int + em_int
+# Calculating the sum of all values in the vector - how many times the xray and em methods were used 
+sum_xray_em <- sum(xray_em)
+sum_xray_em
+```
+
+```{r}
+#Calculating the total experimental methods 
+total <- pdbstats$Total
+total_int <- character_to_interger(total)
+sum_total <- sum(total_int)
+sum_total
+```
+
+```{r}
+# Calculating the percentage
+percent_xray_em <- round((sum_xray_em/sum_total)*100, 2)
+percent_xray_em
+```
+
+> **Q2.** What proportion of structures in the PDB are protein?
+
+```{r}
+protein_total <- character_to_interger(pdbstats[1,7])
+round(protein_total/sum_total*100, 2)
+```
+
+Q \> Proportion
+
+```{r}
+(215684/249751891)*100
+```
+
+## Visualizing the HIV-1 Protease Structure 
+
+We are learning the basics of the Mol\*, mol-star, homepage: https://molstar.org/viewer/
+
+We will be analyzing the PDB code 1 HSG
+
+> **Q6**: Generate and save a figure clearly showing the two distinct chains of HIV-protease along with the ligand. You might also consider showing the catalytic residues ASP 25 in each chain and the critical water (we recommend *“Ball & Stick”* for these side-chains). Add this figure to your Quarto document.
+
+![](images/Screenshot 2024-02-12 at 12.23.01 AM.png)
+
+Figure 1: HIV-Protease with a bound inhibitor, including two APS 25 amino acids
+
+![](images/Screenshot 2024-02-12 at 12.23.13 AM.png)
+
+> **Q4**. Water molecules normally have 3 atoms. Why do we see just one atom per water molecule in this structure?
+>
+> Water is composed of three atoms, two Hydrogen and one Oxygen. However, because Hydrogen is too small, it is omitted from the sequence, making only the one Oxygen atom visible.
+
+> **Q5**. There is a critical “conserved” water molecule in the binding site. Can you identify this water molecule? What residue number does this water molecule have
+>
+> The conserved water molecule: HOH 308
+
+![](images/Screenshot 2024-02-12 at 12.23.24 AM.png)
+
+## R and Working with PDB Structures 
+
+Predicting the dynamics/flexibility of an important protein
+
+```{r}
+library(bio3d)
+hiv <- read.pdb(file = '1hsg')
+```
+
+```{r}
+hiv
+```
+
+> **Q7.** How many amino acid residues are there in this PDB object?
+>
+> 198
+
+> **Q8.** Name one of the two non-protein residues.
+>
+> MK1
+
+> **Q9.** How many protein chains are in this protein structure?
+>
+> 2 protein chains
+
+```{r}
+head(hiv$atom)
+```
+
+```{r}
+pdbseq(hiv)
+```
+
+We will be doing Normal Mode Analysis (NMA) to predict the function motions of a kinase protein.
+
+```{r}
+adk <- read.pdb("6s36")
+```
+
+```{r}
+adk
+```
+
+```{r}
+modes <- nma(adk)
+```
+
+```{r}
+plot(modes)
+```
+
+Now, make a "movie" called a trajectory of the predicted motion:
+
+```{r}
+mktrj(modes, file = "adk_m7.pdb")
+```
+
+This file can be opened in Mol\*

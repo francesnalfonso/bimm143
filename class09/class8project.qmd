@@ -1,0 +1,403 @@
+---
+title: "Unsupervised Learning Analysis of Human Breast Cancer Cells"
+author: "Nicole Alfonso"
+format: pdf
+editor: visual
+---
+
+## Preparing the Data
+
+```{r}
+# Save your input data file into your Project directory
+fna.data <- "https://bioboot.github.io/bimm143_W24/class-material/WisconsinCancer.csv"
+
+# Complete the following code to input the data and store as wisc.df
+wisc.df <- read.csv(fna.data, row.names=1)
+head(wisc.df)
+
+```
+
+We want to exclude the first column, which is a pathologist provided expert diagnosis, which assigns whether the cancer is malignant or benign.
+
+```{r}
+# Creating a new data frame that omits the first column with the diagnosis 
+wisc.data <- wisc.df[,-1]
+head(wisc.data)
+
+#Creating a diagnosis vector for later 
+diagnosis <- wisc.df[,"diagnosis"]
+head(diagnosis)
+
+```
+
+## Exploratory Data Analysis
+
+### Useful functions for Q1-Q3: dim(), nrow(), table(), length(), and grep()
+
+> **Q1. How many observations are in this data set?**
+>
+> There are 569 cases that were observed in the data set. This can solved using the dim() function or the nrow() function.
+
+```{r}
+# The dim() function returns the dimensions of the data frame
+dim(wisc.data)
+
+# The length() function returns the number of columns that are in the data frame 
+length(wisc.data)
+
+# The nrow() function returns the number of rows that are in the data frame 
+nrow(wisc.data)
+```
+
+> **Q2. How many of the observations have a malignant diagnosis?**
+>
+> There are 212 observations with a malignant diagnosis.
+
+```{r}
+# Using the table() function, I am able to extract the frequency of the two variables, M and B, that appear under the 'diagnosis' column 
+
+table(wisc.df$diagnosis)
+```
+
+> **Q3. How many variables/features in the data are suffixed with "\_mean"?**
+>
+> There are 10 variables/features with the suffix "\_mean", which was solved with the col.names() function, grep() function, and the length() function.
+
+```{r}
+# Retrives all of the column names of the data frame, within a new vector 
+column_names <- colnames(wisc.data)
+# Retrieves all of the column names with "_mean" in the title 
+mean_columns <- grep("_mean", column_names, value = TRUE)
+# Calculates the number of columns with "_mean" in the title
+total_mean_columns <- length(mean_columns)
+# Returns the number of columns with the phrase "_mean" in the title 
+total_mean_columns
+```
+
+If I were to makes this a function:
+
+```{r}
+phrase_appearance_calc <- function(dataset, PhraseOfInterest) {
+  column_names <- colnames(dataset)
+  mean_columns <- grep(PhraseOfInterest, column_names, value = TRUE)
+  total_mean_columns <- length(mean_columns)
+  total_mean_columns
+}
+```
+
+```{r}
+phrase_appearance_calc(wisc.data, "_mean")
+```
+
+## Principle Component Analysis
+
+We will first see if the data needs to be scaled before PCA
+
+```{r}
+# Check column means and standard deviations
+colMeans(wisc.data)
+
+apply(wisc.data,2,sd)
+```
+
+```{r}
+# Perform PCA on wisc.data by completing the following code
+wisc.pr <- prcomp(wisc.data, scale = TRUE)
+
+```
+
+```{r}
+summary(wisc.pr)
+```
+
+> **Q4**. **From your results, what proportion of the original variance is captured by the first principal components (PC1)?**
+>
+> 0.4427
+
+> **Q5**. **How many principal components (PCs) are required to describe at least 70% of the original variance in the data?**
+>
+> At least 3 principal components are required - PC1, PC2, and PC3
+
+> **Q6.** **How many principal components (PCs) are required to describe at least 90% of the original variance in the data?**
+>
+> At least 6 principal components (PCs) are required to describe at least 90% of the original variance – PC1, PC2, PC3, PC4, PC5, and PC6
+
+## Interpreting PCA Results
+
+> **Q7.What stands out to you about this plot? Is it easy or difficult to understand? Why?**
+>
+> The plot seems very cluttered and crowded, so much so that is it almost impossible to discern the different points and words.
+
+```{r}
+biplot(wisc.pr)
+```
+
+```{r}
+plot(wisc.pr$x[,1:2], col = as.factor(diagnosis), 
+     xlab = "PC1", ylab = "PC2")
+```
+
+> **Q8.** **Generate a similar plot for principal components 1 and 3. What do you notice about these plots?**
+>
+> The plot points for PC1 and PC2, as shown in the graph above, are much more 'intertwined' and overlapping with one another, compared to PC1 vs PC3. This is due to greater variance found in PC2.
+
+```{r}
+plot(wisc.pr$x[,1], wisc.pr$x[,3], col = as.factor(diagnosis),
+     xlab = "PC1", ylab = "PC3")
+```
+
+```{r}
+# Using ggplot2
+df <- as.data.frame(wisc.pr$x)
+df$diagnosis <- diagnosis 
+
+library(ggplot2)
+
+ggplot(df) + 
+  aes(PC1, PC2, col = diagnosis) + 
+  geom_point()
+```
+
+## Variance Explained
+
+```{r}
+# Calculating the variance of each component 
+pr.var <- wisc.pr$sdev^2
+head(pr.var)
+```
+
+```{r}
+# Variance explained by each principal component: pve 
+pve <- pr.var/sum(pr.var)
+
+# Plot variance explained for each principal component
+plot(pve, xlab = "Principal Component", 
+     ylab = "Proportion of Variance Explained", 
+     ylim = c(0, 1), type = "o")
+```
+
+```{r}
+# Alternative scree plot of the same data 
+barplot(pve, ylab = "Precent of Variance Explained",
+     names.arg=paste0("PC",1:length(pve)), las=2, axes = FALSE)
+axis(2, at=pve, labels=round(pve,2)*100 )
+
+```
+
+```{r}
+library(factoextra)
+fviz_eig(wisc.pr, addlabels = TRUE)
+```
+
+## Communicating PCA Results
+
+> **Q9.** **For the first principal component, what is the component of the loading vector (i.e. `wisc.pr$rotation[,1]`) for the feature `concave.points_mean`?**
+>
+> -0.2608538
+
+```{r}
+loading_vector <- wisc.pr$rotation[,1]
+concave.points_mean.com <- loading_vector["concave.points_mean"]
+concave.points_mean.com
+```
+
+> **Q10.** **What is the minimum number of principal components required to explain 80% of the variance of the data?**
+>
+> The minimum number of PCs needed to cover 80% of variance is 5 – PC1, PC2, PC3, PC4, & PC5
+
+## Hierarchical Clustering
+
+Hierarchical clustering does not assume the number of natural groups that exist in the data – so it would not know that we are looking at two groups: benign and malignant.
+
+```{r}
+# Scaling the data using scale()
+data.scaled <- scale(wisc.data)
+```
+
+```{r}
+# Calculating the Euclidean distance between all pairs of observations of scaled data set 
+data.dist <- dist(data.scaled)
+```
+
+Complete linkage:
+
+```{r}
+# Creating a hierarchical clustering model using complete linkage. 
+wisc.hclust <- hclust(data.dist, method = "complete")
+```
+
+## Results of Hierarchical Clustering
+
+> **Q11.** **Using the `plot()` and `abline()` functions, what is the height at which the clustering model has 4 clusters?**
+>
+> h = 19
+
+```{r}
+plot(wisc.hclust)
+abline(h=19, col="red", lty=2)
+```
+
+## Selecting Number of Clusters
+
+```{r}
+wisc.hclust.clusters <- cutree(wisc.hclust, k = 4)
+table(wisc.hclust.clusters, diagnosis)
+```
+
+> **Q12.** **Can you find a better cluster vs diagnoses match by cutting into a different number of clusters between 2 and 10?**
+>
+> I don't think there is a better cluster because at 4 clusters there are two distinct groups of benign and malignant classifications at cluster 3 and cluster 1 respectively. By adding more clusters, the algorithm is splitting up those classifications into more separate groups, thereby making the classification of malignant vs benign harder to interpret.
+
+```{r}
+wisc.hclust.clusters.2 <- cutree(wisc.hclust, k = 2)
+table(wisc.hclust.clusters.2, diagnosis)
+
+wisc.hclust.clusters.3 <- cutree(wisc.hclust, k = 3)
+table(wisc.hclust.clusters.3, diagnosis)
+
+wisc.hclust.clusters.5 <- cutree(wisc.hclust, k = 5)
+table(wisc.hclust.clusters.5, diagnosis)
+
+wisc.hclust.clusters.6 <- cutree(wisc.hclust, k = 6)
+table(wisc.hclust.clusters.6, diagnosis)
+
+wisc.hclust.clusters.7 <- cutree(wisc.hclust, k = 7)
+table(wisc.hclust.clusters.7, diagnosis)
+
+wisc.hclust.clusters.8 <- cutree(wisc.hclust, k = 8)
+table(wisc.hclust.clusters.8, diagnosis)
+
+wisc.hclust.clusters.9 <- cutree(wisc.hclust, k = 9)
+table(wisc.hclust.clusters.9, diagnosis)
+
+wisc.hclust.clusters.10 <- cutree(wisc.hclust, k = 10)
+table(wisc.hclust.clusters.10, diagnosis)
+```
+
+## Using Different Methods
+
+> **Q13.** **Which method gives your favorite results for the same `data.dist` dataset? Explain your reasoning.**
+>
+> I think the best methods for analyzing the data set, in my opinion, would be there "complete" and "ward.D2" approaches. As someone who is not an expert in PC analysis, the plots generated by these two approaches are easiest to read and interpret, as the first layers which separate the data into two clusters are most distinct. The lineages and sizes of the clusters are more comparable as they are evenly sized. With the "single" method, the data is grouped too closely together, so it is difficult to understand the distinctions/classifications of the data points.
+
+```{r}
+wisc.hclust <- hclust(data.dist, method = "complete")
+plot(wisc.hclust)
+
+wisc.hclust.ward <- hclust(data.dist, method = "ward.D2")
+plot(wisc.hclust.ward)
+
+wisc.hclust.single <- hclust(data.dist, method = "single")
+plot(wisc.hclust.single)
+
+wisc.hclust.avg <- hclust(data.dist, method = "average")
+plot(wisc.hclust.avg)
+```
+
+## OPTIONAL: K-means clustering 
+
+```{r}
+wisc.km <- kmeans(wisc.data, centers = 2, nstart = 20)
+
+table(wisc.km$cluster, diagnosis)
+```
+
+```{r}
+table(wisc.hclust.clusters, wisc.km$cluster)
+```
+
+## Combining Methods: Clustering on PCA Results
+
+```{r}
+wisc.pr.hclust <- hclust(data.dist, method = "ward.D2")
+plot(wisc.pr.hclust)
+
+grps <- cutree(wisc.hclust.ward, k=2)
+table(grps)
+
+table(grps, diagnosis)
+
+plot(wisc.pr$x[,1:2], col=grps)
+
+plot(wisc.pr$x[,1:2], col=as.factor(diagnosis))
+```
+
+```{r}
+g <- as.factor(grps)
+levels(g)
+```
+
+```{r}
+g <- relevel(g, 2)
+levels(g)
+```
+
+```{r}
+#Plot using re-ordered factor 
+plot(wisc.pr$x[,1:2], col=g)
+```
+
+```{r}
+sc.pr.hclust.clusters <- hclust(data.dist, method = "ward.D2")
+wisc.pr.hclust.clusters <- cutree(wisc.pr.hclust, k=2)
+table(wisc.pr.hclust.clusters, diagnosis)
+```
+
+> **Q16.** **How well do the k-means and hierarchical clustering models you created in previous sections (i.e. before PCA) do in terms of separating the diagnoses? Again, use the `table()` function to compare the output of each model ( `wisc.hclust.clusters`) with the vector containing the actual diagnoses.**
+>
+> I think the clustering models are relatively comparable, in the sense that I think for both the data points all seem to be pretty spread out from one another into distinct benign vs malignant clusters (which we can see when compared with the actual diagnoses). I think either could be used, both may just require some trial and error with the number of clusters.
+
+```{r}
+table(wisc.hclust.clusters, diagnosis)
+```
+
+## Sensitivity/Specificity 
+
+> **Q17.** **Which of your analysis procedures resulted in a clustering model with the best specificity? How about sensitivity? Sensitivity = malignant, Specificity = Benign**
+>
+> True values: Benign: 357, Malignant: 212
+>
+> Sensitivity: Combined PCA with hierarchical clustering performed the best, with 188/212
+>
+> Specificity: K means and hierarchical clustering performed equally well, with 343/357
+
+```{r}
+kmeans_specificty <- 175/212
+kmeans_specificty 
+
+kmeans_selectivity <- 343/357
+kmeans_selectivity
+
+
+hcluster_specificity <- 165/212
+hcluster_specificity
+
+hcluster_sensitivity <- 343/357
+hcluster_sensitivity
+
+combined_specificity <- 188/212
+combined_specificity
+
+combined_selectivity <- 329/357 
+combined_selectivity
+```
+
+## Prediction 
+
+```{r}
+#url <- "new_samples.csv"
+url <- "https://tinyurl.com/new-samples-CSV"
+new <- read.csv(url)
+npc <- predict(wisc.pr, newdata=new)
+npc
+```
+
+```{r}
+plot(wisc.pr$x[,1:2], col=g)
+points(npc[,1], npc[,2], col="blue", pch=16, cex=3)
+text(npc[,1], npc[,2], c(1,2), col="white")
+```
+
+> **Q18.** **Which of these new patients should we prioritize for follow up based on your results?**
+>
+> Assuming the red and black are still associated with malignant and benign diagnoses, respectively, I think patient 1 should be prioritized, as it is clustered together with other malignant cells.

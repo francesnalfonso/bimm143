@@ -1,0 +1,58 @@
+---
+title: "Class05: Data Visualization w ggplot"
+author: "Nicole Alfonso (A16429176)"
+format: html
+---
+
+
+# Graphics systems in R 
+
+There are many graphics systems in R for making plots and figures.
+
+We have already played a little with **"base R"** graphics and the `plot()` function.  
+
+Today we will start learning about a popular graphics package called `ggplot2()`. 
+
+This is an add on package - i.e. we need to install it. I install it like I install any package, with the `install.packages()` function. 
+
+
+```{r}
+plot(cars)
+```
+
+
+Before I can use the functions from a package I have to load up the package from my "library". We use the `library(ggplot2)` command to load it up. You also have to add extra stuff to ggplot. 
+
+
+```{r}
+library(ggplot2)
+ggplot(cars)
+```
+
+
+Every ggplot is made up of at least 3 things: 
+- data (the numbers etc. that will go into your plot)
+- aesthetics (how the columns of the data map to the plot aesthetics 
+geoms (how the plot actually looks, points, bars, lines, etc. )
+
+
+```{r}
+ggplot(cars) + 
+  aes(x=speed, y=dist)+ 
+  geom_point() 
+```
+
+
+For simple plots, ggplot is more verbose - it takes more code than base R plot. 
+
+Add some more layers to our plot 
+
+```{r}
+ggplot(cars) + 
+  aes(x=speed, y=dist)+ 
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(title = "Stopping distnace of old cars", 
+       subtitle = "A silly example plot") +
+theme_minimal()
+```
