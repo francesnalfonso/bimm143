@@ -2,7 +2,7 @@
 
 This repo is for my UCSD bioinformatics class. 
 
-[CLASS 4: Bioinformatics data analysis with R](class04.md)
+[CLASS 4: Bioinformatics data analysis with R](class04)
 
 ClASS 5: Data exploration and visualization in R
 
