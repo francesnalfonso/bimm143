@@ -1,6 +1,6 @@
 # BIMM 143: Bioinformatics Class
 
-This repo is for my UCSD bioinformatics class. 
+This repo is for my UCSD bioinformatics class. Linked below are my class projects for each corresponding lecture topic!
 
 [CLASS 4: Bioinformatics data analysis with R](class04)
 
